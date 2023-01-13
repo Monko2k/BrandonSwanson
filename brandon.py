@@ -95,6 +95,7 @@ async def on_member_join(member):
 
 @tasks.loop(hours=config["purgeInterval"])
 async def purge():
+    await updateChannel.send("Purging inactive users")
     cutoff = datetime.datetime.now() - datetime.timedelta(hours=config["inactivityLimit"])
     cursor = db.find({})
     members = {}
