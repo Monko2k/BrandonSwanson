@@ -1,6 +1,7 @@
 import discord
 import datetime
 import pymongo
+import asyncio
 import json
 from discord.ext import commands, tasks
 
@@ -11,6 +12,8 @@ intents = discord.Intents.all()
 intents.message_content = True
 
 client = discord.Client(intents=intents)
+tree =  discord.app_commands.CommandTree(client)
+
 mongoClient = pymongo.MongoClient("localhost", int(config["mongoPort"]))
 db = mongoClient.BrandonSwanson.activity
 guild = None
@@ -25,6 +28,7 @@ async def on_ready():
     global updateChannel
     global managerRole
     await client.wait_until_ready()
+    await tree.sync()
     guild = client.get_guild(int(config["guildId"]))
     activeRole = guild.get_role(int(config["activeRole"]))
     managerRole = guild.get_role(int(config["managerRole"]))
@@ -32,12 +36,50 @@ async def on_ready():
     print(f"Initialized")
     purge.start()
 
+@tree.command(name="deactivate", description="Set a user as inactive")
+@discord.app_commands.default_permissions(create_instant_invite=True)
+async def deactivate(interaction: discord.Interaction, user: discord.User):
+    await setInactive(user)
+    await interaction.response.send_message(f"{user.name} was deactivated")
+
+@tree.command(name="reactivate", description="Set a user as active")
+@discord.app_commands.default_permissions(create_instant_invite=True)
+async def reactivate(interaction: discord.Interaction, user: discord.User):
+    await setActive(user)
+    await interaction.response.send_message(f"{user.name} was reactivated")
+
+@tree.command(name="reset", description="Reset active status for all users")
+@discord.app_commands.default_permissions(administrator=True)
+async def reset(interaction: discord.Interaction, user: discord.User):
+    for member in guild.members:
+        if not activeRole in member.roles:
+            await member.add_roles(activeRole)
+        await update(member)
+    await interaction.response.send_message("Set all users as active")
+
+@tree.command(name="purge", description="Manually run a purge")
+@discord.app_commands.default_permissions(administrator=True)
+async def reset(interaction: discord.Interaction, user: discord.User):
+    await purge()
+    await interaction.response.send_message("Manually ran purge")
+
+@tree.command(name="clear", description="Clear #tempchannel")
+@discord.app_commands.default_permissions(create_instant_invite=True)
+async def clear(interaction: discord.Interaction):
+    tempChannel = config["tempChannel"]
+    if interaction.channel.id != int(tempChannel):
+        await interaction.response.send_message(f"This command can only be used in <#{tempChannel}>")
+    else:
+        await interaction.response.defer()
+        deleted = await interaction.channel.purge()
+        await interaction.channel.send(content=f"Cleared {len(deleted)} messages", delete_after=10)
+
 @client.event
 async def on_message(message):
     if message.author == client.user:
         return
 
-    update(message.author)
+    await update(message.author)
 
     if message.content == "brandon":
         await message.channel.send("bruh")
@@ -45,58 +87,23 @@ async def on_message(message):
     if message.content.lower() == "brandon is bald":
         await message.channel.send("no im not")
 
-    if message.content.startswith("&deactivate"):
-        if not message.author.guild_permissions.administrator and not managerRole in message.author.roles:
-            await message.channel.send("Nope")
-            return
-        if len(message.mentions) != 1:
-            await message.channel.send("Tag one user to deactivate")
-            return
-        await setInactive(message.mentions[0])
-
-    if message.content.startswith("&reactivate"):
-        if not message.author.guild_permissions.administrator and not managerRole in message.author.roles:
-            await message.channel.send("Nope")
-            return
-        if len(message.mentions) != 1:
-            await message.channel.send("Tag one user to reactivate")
-            return
-        await setActive(message.mentions[0])
-
-
-    if message.content == "&reset":
-        if not message.author.guild_permissions.administrator:
-            await message.channel.send("Fuck you")
-            return
-
-        for member in guild.members:
-            if not activeRole in member.roles:
-                await member.add_roles(activeRole)
-            update(member)
-
-        await message.channel.send("Set all users as active")
-
-    if message.content == "&purge":
-        if not message.author.guild_permissions.administrator:
-            await message.channel.send("Fuck you")
-            return
-
-        await purge()
-        await message.channel.send("Overrode and purged")
+    if message.channel.id == int(config["tempChannel"]):
+        await asyncio.sleep(config["messageLifespanSeconds"])
+        await message.delete()
 
 
 @client.event
 async def on_voice_state_update(member, before, after):
-    update(member)
+    await update(member)
 
 @client.event
 async def on_member_join(member):
     await member.add_roles(activeRole)
 
-@tasks.loop(hours=config["purgeInterval"])
+@tasks.loop(hours=config["purgeIntervalHours"])
 async def purge():
     await updateChannel.send("Purging inactive users")
-    cutoff = datetime.datetime.now() - datetime.timedelta(hours=config["inactivityLimit"])
+    cutoff = datetime.datetime.now() - datetime.timedelta(hours=config["inactivityLimitHours"])
     cursor = db.find({})
     members = {}
     for document in cursor:
@@ -119,12 +126,10 @@ async def setActive(member):
     await member.add_roles(activeRole)
     await updateChannel.send(f"{member.name} has been set as active")
 
-def update(member):
-    payload = {
-        "timestamp": datetime.datetime.now()
-    }
+async def update(member):
+    payload = { "timestamp": datetime.datetime.now() }
 
-    db.update_one({ "_id": member.id }, { "$set": payload }, upsert=True)
+    await db.update_one({ "_id": member.id }, { "$set": payload }, upsert=True)
 
 client.run(config["discordKey"])
 
