@@ -126,10 +126,10 @@ async def setActive(member):
     await member.add_roles(activeRole)
     await updateChannel.send(f"{member.name} has been set as active")
 
-async def update(member):
+def update(member):
     payload = { "timestamp": datetime.datetime.now() }
 
-    await db.update_one({ "_id": member.id }, { "$set": payload }, upsert=True)
+    db.update_one({ "_id": member.id }, { "$set": payload }, upsert=True)
 
 client.run(config["discordKey"])
 
