@@ -54,7 +54,7 @@ async def reset(interaction: discord.Interaction, user: discord.User):
     for member in guild.members:
         if not activeRole in member.roles:
             await member.add_roles(activeRole)
-        await update(member)
+        update(member)
     await interaction.response.send_message("Set all users as active")
 
 @tree.command(name="purge", description="Manually run a purge")
@@ -79,7 +79,7 @@ async def on_message(message):
     if message.author == client.user:
         return
 
-    await update(message.author)
+    update(message.author)
 
     if message.content == "brandon":
         await message.channel.send("bruh")
@@ -94,7 +94,7 @@ async def on_message(message):
 
 @client.event
 async def on_voice_state_update(member, before, after):
-    await update(member)
+    update(member)
 
 @client.event
 async def on_member_join(member):
