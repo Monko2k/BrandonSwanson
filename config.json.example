@@ -5,6 +5,6 @@
     "updateChannel": "",
     "guildId": "",
     "mongoPort": "27017",
-    "purgeInterval": 168,
+    "purgeIntervalHours": 168,
     "inactivityLimit": 730
 }

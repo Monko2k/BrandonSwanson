@@ -39,13 +39,13 @@ async def on_ready():
 @tree.command(name="deactivate", description="Set a user as inactive")
 @discord.app_commands.default_permissions(create_instant_invite=True)
 async def deactivate(interaction: discord.Interaction, user: discord.User):
-    await setInactive(user)
+    await setInactive(user, interaction.user)
     await interaction.response.send_message(f"{user.name} was deactivated")
 
 @tree.command(name="reactivate", description="Set a user as active")
 @discord.app_commands.default_permissions(create_instant_invite=True)
 async def reactivate(interaction: discord.Interaction, user: discord.User):
-    await setActive(user)
+    await setActive(user, interaction.user)
     await interaction.response.send_message(f"{user.name} was reactivated")
 
 @tree.command(name="reset", description="Reset active status for all users")
@@ -118,13 +118,16 @@ async def purge():
         else:
             setInactive(member)
 
-async def setInactive(member):
+async def setInactive(member, caller=""):
     await member.remove_roles(activeRole)
-    await updateChannel.send(f"{member.name} has been purged for inactivity")
+    if caller:
+        await updateChannel.send(f"{member.name} has been purged by {caller.mention}")
+    else:
+        await updateChannel.send(f"{member.name} has been purged for inactivity")
 
-async def setActive(member):
+async def setActive(member, caller):
     await member.add_roles(activeRole)
-    await updateChannel.send(f"{member.name} has been set as active")
+    await updateChannel.send(f"{member.name} has been set as active by {caller.mention}")
 
 def update(member):
     payload = { "timestamp": datetime.datetime.now() }
