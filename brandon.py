@@ -102,7 +102,6 @@ async def on_member_join(member):
 
 @tasks.loop(hours=config["purgeIntervalHours"])
 async def purge():
-    await updateChannel.send("Purging inactive users")
     cutoff = datetime.datetime.now() - datetime.timedelta(hours=config["inactivityLimitHours"])
     cursor = db.find({})
     members = {}
@@ -135,4 +134,3 @@ def update(member):
     db.update_one({ "_id": member.id }, { "$set": payload }, upsert=True)
 
 client.run(config["discordKey"])
-
