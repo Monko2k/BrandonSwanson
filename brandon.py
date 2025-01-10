@@ -127,7 +127,7 @@ async def purge():
             if members[member.id] < cutoff:
                 await setInactive(member)
         else:
-            setInactive(member)
+            await setInactive(member)
 
 async def setInactive(member, caller=""):
     await member.remove_roles(activeRole)
