@@ -142,7 +142,7 @@ async def setActive(member, caller):
 
 def update(member, timestamp=None):
     if timestamp is None:
-        timestamp = datetime.datetime.now()
+        timestamp = datetime.now()
 
     payload = { "timestamp": timestamp }
 
