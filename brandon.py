@@ -1,5 +1,5 @@
 import discord
-import datetime
+from datetime import datetime, timedelta
 import pymongo
 import asyncio
 import json
@@ -56,6 +56,18 @@ async def reset(interaction: discord.Interaction, user: discord.User):
             await member.add_roles(activeRole)
         update(member)
     await interaction.response.send_message("Set all users as active")
+
+@tree.command(name="forceUpdate", description="Force update all users")
+@discord.app_commands.default_permissions(administrator=True)
+async def forceUpdate(interaction: discord.Interaction, dateOffset: int = None):
+    timestamp = None
+    if dateOffset is not None:
+        timestamp = datetime.now() - timedelta(days=dateOffset)
+
+    for member in guild.members:
+        update(member, timestamp)
+
+    await interaction.response.send_message("Updated all users.")
 
 @tree.command(name="purge", description="Manually run a purge")
 @discord.app_commands.default_permissions(administrator=True)
@@ -128,8 +140,11 @@ async def setActive(member, caller):
     await member.add_roles(activeRole)
     await updateChannel.send(f"{member.name} has been set as active by {caller.mention}")
 
-def update(member):
-    payload = { "timestamp": datetime.datetime.now() }
+def update(member, timestamp=None):
+    if timestamp is None:
+        timestamp = datetime.datetime.now()
+
+    payload = { "timestamp": timestamp }
 
     db.update_one({ "_id": member.id }, { "$set": payload }, upsert=True)
 
