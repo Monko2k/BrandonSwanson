@@ -57,7 +57,7 @@ async def reset(interaction: discord.Interaction, user: discord.User):
         update(member)
     await interaction.response.send_message("Set all users as active")
 
-@tree.command(name="forceUpdate", description="Force update all users")
+@tree.command(name="forceupdate", description="Force update all users")
 @discord.app_commands.default_permissions(administrator=True)
 async def forceUpdate(interaction: discord.Interaction, dateOffset: int = None):
     timestamp = None
