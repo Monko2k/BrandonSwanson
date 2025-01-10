@@ -59,10 +59,10 @@ async def reset(interaction: discord.Interaction, user: discord.User):
 
 @tree.command(name="forceupdate", description="Force update all users")
 @discord.app_commands.default_permissions(administrator=True)
-async def forceupdate(interaction: discord.Interaction, date_offset: int = None):
+async def forceupdate(interaction: discord.Interaction, offset: int = None):
     timestamp = None
-    if date_offset is not None:
-        timestamp = datetime.now() - datetime.timedelta(days=date_offset)
+    if offset is not None:
+        timestamp = datetime.now() - datetime.timedelta(days=offset)
 
     for member in guild.members:
         update(member, timestamp)
