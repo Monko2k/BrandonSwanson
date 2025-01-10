@@ -1,5 +1,5 @@
 import discord
-from datetime import datetime, timedelta
+import datetime
 import pymongo
 import asyncio
 import json
@@ -62,7 +62,7 @@ async def reset(interaction: discord.Interaction, user: discord.User):
 async def forceupdate(interaction: discord.Interaction, date_offset: int = None):
     timestamp = None
     if date_offset is not None:
-        timestamp = datetime.now() - timedelta(days=date_offset)
+        timestamp = datetime.now() - datetime.timedelta(days=date_offset)
 
     for member in guild.members:
         update(member, timestamp)
@@ -142,7 +142,7 @@ async def setActive(member, caller):
 
 def update(member, timestamp=None):
     if timestamp is None:
-        timestamp = datetime.now()
+        timestamp = datetime.datetime.now()
 
     payload = { "timestamp": timestamp }
 
