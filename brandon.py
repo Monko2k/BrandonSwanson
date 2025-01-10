@@ -114,6 +114,7 @@ async def on_member_join(member):
 
 @tasks.loop(hours=config["purgeIntervalHours"])
 async def purge():
+    return
     cutoff = datetime.datetime.now() - datetime.timedelta(hours=config["inactivityLimitHours"])
     cursor = db.find({})
     members = {}
